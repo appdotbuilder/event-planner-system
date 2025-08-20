@@ -1,11 +1,12 @@
+import { db } from '../db';
+import { eventsTable } from '../db/schema';
 import { type CreateEventInput, type Event } from '../schema';
 
 export const createEvent = async (input: CreateEventInput): Promise<Event> => {
-    // This is a placeholder declaration! Real code should be implemented here.
-    // The goal of this handler is creating a new event with the provided details,
-    // persisting it in the database and returning the created event with generated ID.
-    return Promise.resolve({
-        id: 0, // Placeholder ID
+  try {
+    // Insert event record
+    const result = await db.insert(eventsTable)
+      .values({
         title: input.title,
         description: input.description,
         location: input.location,
@@ -13,8 +14,15 @@ export const createEvent = async (input: CreateEventInput): Promise<Event> => {
         end_date: input.end_date,
         max_capacity: input.max_capacity,
         current_bookings: 0, // Default value for new events
-        is_active: true, // Default value for new events
-        created_at: new Date(),
-        updated_at: new Date()
-    } as Event);
+        is_active: true // Default value for new events
+      })
+      .returning()
+      .execute();
+
+    // Return the created event
+    return result[0];
+  } catch (error) {
+    console.error('Event creation failed:', error);
+    throw error;
+  }
 };

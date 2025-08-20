@@ -1,9 +1,29 @@
+import { db } from '../db';
+import { speakersTable, eventSpeakersTable } from '../db/schema';
 import { type DeleteByIdInput } from '../schema';
+import { eq } from 'drizzle-orm';
 
 export const deleteSpeaker = async (input: DeleteByIdInput): Promise<{ success: boolean }> => {
-    // This is a placeholder declaration! Real code should be implemented here.
-    // The goal of this handler is deleting a speaker by their ID from the database.
-    // Should also remove any event-speaker associations for this speaker.
-    // Returns success status to indicate whether the deletion was successful.
-    return Promise.resolve({ success: true });
+  try {
+    // First verify the speaker exists
+    const existingSpeaker = await db.select()
+      .from(speakersTable)
+      .where(eq(speakersTable.id, input.id))
+      .execute();
+
+    if (existingSpeaker.length === 0) {
+      return { success: false };
+    }
+
+    // Delete the speaker - this will cascade delete event-speaker associations
+    // due to the foreign key constraint with onDelete: 'cascade'
+    const result = await db.delete(speakersTable)
+      .where(eq(speakersTable.id, input.id))
+      .execute();
+
+    return { success: true };
+  } catch (error) {
+    console.error('Speaker deletion failed:', error);
+    throw error;
+  }
 };
